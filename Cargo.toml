@@ -1,0 +1,15 @@
+[package]
+name = "gol"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+grid = "0.14.0"
+lazy_static = "1.5.0"
+log = "0.4.22"
+minifb = "0.27.0"
+rand = "0.8.5"
+rayon = "1.10.0"
+serde = { version = "1.0.208", features = ["derive"] }
+thiserror = "1.0.63"
+toml = "0.8.19"
