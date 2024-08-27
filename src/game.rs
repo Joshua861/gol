@@ -1,52 +1,43 @@
 use grid::Grid;
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
+use std::collections::HashSet;
 
-use crate::{chance, config::CONFIG};
-
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Game {
-    tiles: Grid<bool>,
-    frame_count: usize,
+    pub tiles: Grid<bool>,
+    pub run_count: usize,
 }
 
 impl Game {
-    pub fn new() -> Self {
-        let tiles = Grid::from_vec(
-            vec![false; CONFIG.board_width * CONFIG.board_height]
-                .iter()
-                .map(|_| {
-                    if chance!(1 in 3) {
-                        return true;
-                    }
-
-                    false
-                })
-                .collect::<Vec<bool>>(),
-            CONFIG.board_width,
-        );
+    pub fn new(width: usize, height: usize) -> Self {
+        let tiles = Grid::from_vec(vec![false; width * height], width);
 
         Self {
             tiles,
-            frame_count: 0,
+            run_count: 0,
         }
     }
     pub fn advance(&mut self) {
-        let mut next = self.clone();
+        let width = self.width();
+        let height = self.height();
 
-        for i in 0..(CONFIG.board_width * CONFIG.board_height) {
-            let (x, y) = Game::i_to_xy(i);
+        let mut next_tiles = vec![false; width * height];
 
-            let count = self.get_neighbors(x, y).iter().filter(|v| **v).count();
+        next_tiles.par_iter_mut().enumerate().for_each(|(i, tile)| {
+            let (x, y) = self.i_to_xy(i);
+            let count = self.count_neighbors(x, y);
+            let cell = self.get(x, y).unwrap_or(false);
+            *tile = (count == 3) || (cell && count == 2);
+        });
 
-            if !(2..=3).contains(&count) {
-                next.set(x, y, false);
-            } else if count == 3 {
-                next.set(x, y, true);
-            }
-        }
-
-        next.frame_count += 1;
-
-        *self = next;
+        self.tiles = Grid::from_vec(next_tiles, width);
+        self.run_count += 1;
+    }
+    pub fn width(&self) -> usize {
+        self.tiles.cols()
+    }
+    pub fn height(&self) -> usize {
+        self.tiles.rows()
     }
     pub fn get(&self, x: usize, y: usize) -> Option<bool> {
         self.tiles.get(y, x).cloned()
@@ -58,30 +49,115 @@ impl Game {
 
         self.tiles.get(y, x).cloned().unwrap_or(false)
     }
+    // pub fn par_for_each(&self, f: impl Fn(usize, usize, bool) + Sync) {
+    //     vec![false; self.width() * self.height()]
+    //         .par_iter()
+    //         .enumerate()
+    //         .for_each(|(i, _)| {
+    //             let (x, y) = self.i_to_xy(i);
+    //
+    //             f(x, y, self.get(x, y).unwrap())
+    //         })
+    // }
+    #[allow(clippy::comparison_chain)]
+    pub fn set_wh(&mut self, w: usize, h: usize) {
+        let mut new_game = Game::new(w, h);
+
+        for (i, tile) in self.tiles.iter().enumerate() {
+            let (x, y) = self.i_to_xy(i);
+
+            new_game.try_set(x, y, *tile);
+        }
+
+        *self = new_game
+    }
+    pub fn wh(&self) -> (usize, usize) {
+        (self.width(), self.height())
+    }
     pub fn set(&mut self, x: usize, y: usize, value: bool) {
-        *self.tiles.get_mut(y, x).expect("Failed to set tile.") = value;
+        if let Some(tile) = self.tiles.get_mut(y, x) {
+            *tile = value;
+        } else {
+            eprintln!(
+                "Failed to set tile {}/{}.\n Board {{\n    width: {},\n    height: {},\n}}.",
+                x,
+                y,
+                self.width(),
+                self.height()
+            );
+        }
     }
-    pub fn get_neighbors(&self, x: usize, y: usize) -> Vec<bool> {
-        let mut neighbors = Vec::new();
+    pub fn try_set(&mut self, x: usize, y: usize, value: bool) -> Option<()> {
+        *self.tiles.get_mut(y, x)? = value;
+        Some(())
+    }
+    fn count_neighbors(&self, x: usize, y: usize) -> u8 {
+        let mut count = 0;
+        for dy in -1..=1 {
+            for dx in -1..=1 {
+                if dx == 0 && dy == 0 {
+                    continue;
+                }
+                let nx = x as i32 + dx;
+                let ny = y as i32 + dy;
+                if nx >= 0 && nx < self.width() as i32 && ny >= 0 && ny < self.height() as i32 {
+                    count += self.get_or_empty(nx as isize, ny as isize) as u8;
+                }
+            }
+        }
+        count
+    }
+    pub fn i_to_xy(&self, i: usize) -> (usize, usize) {
+        (i % self.width(), i / self.width())
+    }
+    pub fn clear(&mut self) {
+        *self = Self::new(self.width(), self.height());
+    }
+    pub fn draw_line(
+        &mut self,
+        start_x: usize,
+        start_y: usize,
+        end_x: usize,
+        end_y: usize,
+        to: bool,
+    ) {
+        let mut coords: HashSet<(usize, usize)> = HashSet::new();
 
-        [
-            [1, 1],
-            [1, 0],
-            [0, 1],
-            [-1, -1],
-            [-1, 0],
-            [0, -1],
-            [1, -1],
-            [-1, 1],
-        ]
-        .iter()
-        .for_each(|[x_offset, y_offset]| {
-            neighbors.push(self.get_or_empty(x as isize + x_offset, y as isize + y_offset))
+        let mut x = start_x as isize;
+        let mut y = start_y as isize;
+
+        let dx = (end_x as isize - start_x as isize).abs();
+        let dy = -(end_y as isize - start_y as isize).abs();
+        let sx = if start_x < end_x { 1 } else { -1 };
+        let sy = if start_y < end_y { 1 } else { -1 };
+        let mut err = dx + dy;
+
+        loop {
+            coords.insert((x as usize, y as usize));
+            if x == end_x as isize && y == end_y as isize {
+                break;
+            }
+            let e2 = 2 * err;
+            if e2 >= dy {
+                if x == end_x as isize {
+                    break;
+                }
+                err += dy;
+                x += sx;
+            }
+            if e2 <= dx {
+                if y == end_y as isize {
+                    break;
+                }
+                err += dx;
+                y += sy;
+            }
+        }
+
+        coords.insert((end_x, end_y));
+
+        coords.iter().for_each(|(x, y)| {
+            self.set(*x, *y, to);
         });
-
-        neighbors
-    }
-    pub fn i_to_xy(i: usize) -> (usize, usize) {
-        (i % CONFIG.board_width, i / CONFIG.board_width)
     }
 }
