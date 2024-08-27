@@ -1,79 +1,133 @@
-use std::{
-    io::{self, Write},
-    time,
-};
-
 use config::CONFIG;
 use game::Game;
-use minifb::{Key, KeyRepeat, Window, WindowOptions};
-use rayon::iter::{
-    IndexedParallelIterator, IntoParallelRefIterator, IntoParallelRefMutIterator, ParallelIterator,
-};
+use nannou::prelude::*;
 
 mod config;
 mod game;
 mod utils;
 
+struct Model {
+    game: Game,
+    paused: bool,
+    pressed: Option<MouseButton>,
+    last_mouse_pos: Option<(usize, usize)>,
+}
+
 fn main() {
-    let mut buffer: Vec<u32> = vec![0; CONFIG.window_width * CONFIG.window_height];
+    nannou::app(model)
+        .update(update)
+        .view(view)
+        .loop_mode(LoopMode::refresh_sync())
+        .run();
+}
 
-    let mut window = Window::new(
-        &(CONFIG.window_title),
-        CONFIG.window_width,
-        CONFIG.window_height,
-        WindowOptions::default(),
-    )
-    .unwrap_or_else(|e| {
-        panic!("Failed to create window: {}", e);
-    });
-
-    window.set_target_fps(CONFIG.target_fps);
-
-    let mut game = Game::new();
-    let mut paused = false;
-    let mut out = io::stdout();
-
-    let x_multiplier = CONFIG.board_width as f32 / CONFIG.window_width as f32;
-    let y_multiplier = CONFIG.board_height as f32 / CONFIG.window_height as f32;
-
-    let mapping: Vec<(usize, usize)> = (0..buffer.len())
-        .map(|i| {
-            let px = i % CONFIG.window_width;
-            let py = i / CONFIG.window_width;
-            let x = (px as f32 * CONFIG.board_width as f32 / CONFIG.window_width as f32) as usize;
-            let y = (py as f32 * CONFIG.board_height as f32 / CONFIG.window_height as f32) as usize;
-            (x, y)
-        })
-        .collect();
-
-    while window.is_open() && !window.is_key_down(Key::Escape) {
-        if window.is_key_pressed(Key::Space, KeyRepeat::No) {
-            paused = !paused;
-        }
-
-        if !paused {
-            let timer = time::Instant::now();
-            game.advance();
-
-            buffer
-                .par_iter_mut()
-                .zip(mapping.par_iter())
-                .for_each(|(v, &(x, y))| {
-                    *v = if game.get(x, y).unwrap_or(false) {
-                        0xFFF5F5F5
-                    } else {
-                        0xFF0A0A0A
-                    };
-                });
-
-            window
-                .update_with_buffer(&buffer, CONFIG.window_width, CONFIG.window_height)
-                .unwrap();
-
-            print!("\rFPS: {:.1}", 1.0 / timer.elapsed().as_secs_f32());
-            let _ = out.flush();
-        }
-
-        window.update();
+fn model(app: &App) -> Model {
+    app.new_window()
+        .mouse_pressed(mouse_pressed)
+        .mouse_released(mouse_released)
+        .resized(window_resized)
+        .key_pressed(key_pressed)
+        .build()
+        .unwrap();
+    Model {
+        game: Game::new(1, 1),
+        paused: false,
+        pressed: None,
+        last_mouse_pos: None,
     }
+}
+
+fn window_resized(_app: &App, model: &mut Model, rect: Vec2) {
+    time!("window_resize", {
+        model.game.set_wh(
+            (rect.x / CONFIG.tile_size).ceil() as usize,
+            (rect.y / CONFIG.tile_size).ceil() as usize,
+        );
+    });
+}
+
+fn key_pressed(_app: &App, model: &mut Model, key: Key) {
+    match key {
+        Key::Space => model.paused = !model.paused,
+        Key::C => model.game.clear(),
+        _ => (),
+    }
+}
+
+fn mouse_pressed(_app: &App, model: &mut Model, button: MouseButton) {
+    model.pressed = Some(button);
+}
+
+fn mouse_released(_app: &App, model: &mut Model, _button: MouseButton) {
+    model.pressed = None;
+    model.last_mouse_pos = None;
+}
+
+fn update(app: &App, model: &mut Model, _update: Update) {
+    print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
+
+    if !model.paused {
+        time!("advance", { model.game.advance() });
+    }
+    if let Some(button) = model.pressed {
+        let mut set = |to: bool| {
+            let pos = app.mouse.position();
+            let (x, y) = pixel_to_game(pos, model.game.wh());
+
+            if let Some((px, py)) = model.last_mouse_pos {
+                model.game.draw_line(x, y, px, py, to);
+            } else {
+                model.game.set(x, y, to);
+            }
+        };
+
+        match button {
+            MouseButton::Left => set(true),
+            MouseButton::Right => set(false),
+            _ => (),
+        }
+
+        model.last_mouse_pos = Some(pixel_to_game(app.mouse.position(), model.game.wh()));
+    }
+}
+
+fn view(app: &App, model: &Model, frame: Frame) {
+    time!("view", {
+        let draw = app.draw();
+        let game = &model.game;
+
+        draw.background().color(Srgb::new(0.1, 0.1, 0.1));
+
+        time!("rects", {
+            for (i, tile) in game.tiles.iter().enumerate() {
+                if *tile {
+                    let x = i % game.width();
+                    let y = i / game.width();
+
+                    let (px, py) = board_to_game((x, y), game.wh());
+
+                    draw.rect()
+                        .x_y(px, py)
+                        .w_h(CONFIG.tile_size, CONFIG.tile_size)
+                        .color(Srgb::new(0.9, 0.9, 0.9));
+                }
+            }
+        });
+
+        draw.to_frame(app, &frame).unwrap();
+    });
+}
+
+fn pixel_to_game(pixel: Vec2, board_size: (usize, usize)) -> (usize, usize) {
+    (
+        ((pixel.x / CONFIG.tile_size) + board_size.0 as f32 / 2.).round() as usize,
+        ((pixel.y / CONFIG.tile_size) + board_size.1 as f32 / 2.).round() as usize,
+    )
+}
+
+fn board_to_game(board: (usize, usize), board_size: (usize, usize)) -> (f32, f32) {
+    (
+        (board.0 as f32 - board_size.0 as f32 / 2.) * CONFIG.tile_size,
+        (board.1 as f32 - board_size.1 as f32 / 2.) * CONFIG.tile_size,
+    )
 }

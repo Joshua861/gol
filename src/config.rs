@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use log::warn;
 use serde::{Deserialize, Serialize};
-use std::fs;
+use std::{env, fs};
 
 #[cfg(debug_assertions)]
 const CONFIG_PATH: &str = "./config.toml";
@@ -15,12 +15,7 @@ lazy_static! {
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Config {
     pub window_title: String,
-    pub window_width: usize,
-    pub window_height: usize,
-    pub target_fps: usize,
-    pub board_width: usize,
-    pub board_height: usize,
-    pub start_paused: bool,
+    pub tile_size: f32,
 }
 
 impl Config {
@@ -32,8 +27,20 @@ impl Config {
         } else {
             warn!("Failed to read config file; using default values.");
 
+            #[allow(deprecated)]
+            let path = CONFIG_PATH
+                .split('/')
+                .filter(|s| !s.contains(".toml"))
+                .collect::<Vec<&str>>()
+                .join("/")
+                .replace('~', env::home_dir().unwrap().to_str().unwrap());
+
+            dbg!(&path);
+
+            let _ = fs::create_dir_all(path);
+
             fs::write(CONFIG_PATH, Self::default().to_toml())
-                .expect("Failed to write default values to config file.");
+                .expect("Failed to write default values to config file");
 
             Self::default()
         }
@@ -41,12 +48,7 @@ impl Config {
     pub fn default() -> Self {
         Self {
             window_title: String::from("Game of Life"),
-            window_width: 1920,
-            window_height: 1080,
-            target_fps: 60,
-            board_height: 192,
-            board_width: 108,
-            start_paused: true,
+            tile_size: 10.0,
         }
     }
     pub fn to_toml(&self) -> String {
