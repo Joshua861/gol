@@ -1,9 +1,6 @@
 use grid::Grid;
-use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
-use std::{
-    collections::HashSet,
-    sync::{Arc, Mutex},
-};
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
+use std::collections::HashSet;
 
 #[derive(Clone, Debug)]
 pub struct Game {
@@ -21,26 +18,20 @@ impl Game {
         }
     }
     pub fn advance(&mut self) {
-        let next = Arc::new(Mutex::new(self.clone()));
         let width = self.width();
         let height = self.height();
 
-        vec![false; width * height]
-            .par_iter()
-            .enumerate()
-            .for_each(|(i, _)| {
-                let (x, y) = self.i_to_xy(i);
+        let mut next_tiles = vec![false; width * height];
 
-                let count = self.count_neighbors(x, y);
-                let cell = self.get(x, y).unwrap();
+        next_tiles.par_iter_mut().enumerate().for_each(|(i, tile)| {
+            let (x, y) = self.i_to_xy(i);
+            let count = self.count_neighbors(x, y);
+            let cell = self.get(x, y).unwrap_or(false);
+            *tile = (count == 3) || (cell && count == 2);
+        });
 
-                let mut next = next.lock().unwrap();
-                next.set(x, y, (count == 3) || (cell && count == 2));
-            });
-
-        let mut next = Arc::try_unwrap(next).unwrap().into_inner().unwrap();
-        next.run_count += 1;
-        *self = next;
+        self.tiles = Grid::from_vec(next_tiles, width);
+        self.run_count += 1;
     }
     pub fn width(&self) -> usize {
         self.tiles.cols()
@@ -58,16 +49,16 @@ impl Game {
 
         self.tiles.get(y, x).cloned().unwrap_or(false)
     }
-    pub fn par_for_each(&self, f: impl Fn(usize, usize, bool) + Sync) {
-        vec![false; self.width() * self.height()]
-            .par_iter()
-            .enumerate()
-            .for_each(|(i, _)| {
-                let (x, y) = self.i_to_xy(i);
-
-                f(x, y, self.get(x, y).unwrap())
-            })
-    }
+    // pub fn par_for_each(&self, f: impl Fn(usize, usize, bool) + Sync) {
+    //     vec![false; self.width() * self.height()]
+    //         .par_iter()
+    //         .enumerate()
+    //         .for_each(|(i, _)| {
+    //             let (x, y) = self.i_to_xy(i);
+    //
+    //             f(x, y, self.get(x, y).unwrap())
+    //         })
+    // }
     #[allow(clippy::comparison_chain)]
     pub fn set_wh(&mut self, w: usize, h: usize) {
         let mut new_game = Game::new(w, h);
