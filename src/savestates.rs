@@ -1,4 +1,4 @@
-use crate::{board::Board, utils::BASE_DIR};
+use crate::{game::Board, utils::BASE_DIR};
 use chrono::Utc;
 use std::fs;
 

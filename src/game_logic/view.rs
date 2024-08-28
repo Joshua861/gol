@@ -1,7 +1,7 @@
 use super::*;
-use crate::board::Board;
+use crate::game::Board;
 use crate::time;
-use crate::utils::clear;
+use crate::timing::{clear_timers, get_timers};
 
 pub fn view(app: &App, model: &Model, frame: Frame) {
     let cache = &model.cache;
@@ -35,9 +35,6 @@ pub fn view(app: &App, model: &Model, frame: Frame) {
 
         draw.to_frame(app, &frame).unwrap();
     });
-
-    #[cfg(debug_assertions)]
-    clear();
 }
 
 fn draw_background(draw: &Draw, cache: &Cache) {
@@ -56,14 +53,32 @@ fn draw_background(draw: &Draw, cache: &Cache) {
 fn draw_fps(draw: &Draw, model: &Model) {
     let cache = &model.cache;
 
-    draw.text(&format!("{:.1}", model.fps.avg()))
+    let mut text = format!("{:.2} fps", model.fps.avg());
+
+    if model.paused {
+        text = format!("{} (paused)", text);
+    }
+
+    #[cfg(debug_assertions)]
+    {
+        for timer in get_timers() {
+            text = format!("{}\n{}", text, timer);
+        }
+
+        clear_timers();
+    }
+
+    draw.text(&text)
         .color(CONFIG.cell_color.to_srgb())
         .x_y(
-            -cache.window_size.0 / 2. + 40.,
-            cache.window_size.1 / 2. - 25.,
+            -cache.window_size.0 / 2. + 515.,
+            cache.window_size.1 / 2. - 60.,
         )
         .font_size(24)
-        .w_h(100., 100.);
+        .font(model.font.clone())
+        .left_justify()
+        .align_text_top()
+        .w_h(1000., 100.);
 }
 
 fn draw_cells(draw: &Draw, board: &Board, cache: &Cache) {

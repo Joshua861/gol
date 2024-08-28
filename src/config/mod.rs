@@ -1,26 +1,17 @@
+use self::load::load;
+use crate::game::Rule;
 use color::*;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
-use self::load::load;
-
 mod color;
 mod load;
-
-#[cfg(target_family = "unix")]
-#[cfg(debug_assertions)]
-const CONFIG_PATH: &str = "./config.toml";
-#[cfg(not(debug_assertions))]
-const CONFIG_PATH: &str = "~/.local/share/stuff_made_by_lily/GOL/config.toml";
-
-#[cfg(target_family = "windows")]
-const CONFIG_PATH: &str = ".\\config.toml";
 
 lazy_static! {
     pub static ref CONFIG: Config = Config::load();
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize)]
 pub struct Config {
     pub window_title: String,
     pub tile_size: f32,
@@ -36,6 +27,8 @@ pub struct Config {
     pub pan_speed: f32,
     pub text_color: Color,
     pub smoothing_factor: f32,
+    #[serde(alias = "rulestring")]
+    pub rule: Rule,
 }
 
 impl Config {
@@ -58,6 +51,7 @@ impl Config {
             void_color: Color::new(0.08, 0.08, 0.08),
             text_color: Color::new(0.95, 0.95, 0.95),
             smoothing_factor: 3.0,
+            rule: Rule::from_str("23/3"),
         }
     }
     pub fn to_toml(&self) -> String {

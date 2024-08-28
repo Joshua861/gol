@@ -1,10 +1,11 @@
-mod board;
+use game_logic::{model, update, view};
+
 mod config;
+mod game;
 mod game_logic;
 mod savestates;
+mod timing;
 mod utils;
-
-use crate::game_logic::*;
 
 fn main() {
     nannou::app(model).update(update).view(view).run();

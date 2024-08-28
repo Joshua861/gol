@@ -1,7 +1,8 @@
 use super::*;
-use crate::{board::Board, savestates};
+use crate::{game::Board, savestates, utils::load_font};
 use clap::Parser;
 use fps_ticker::Fps;
+use nannou::text::Font;
 
 pub struct Model {
     pub board: Board,
@@ -15,6 +16,7 @@ pub struct Model {
     pub symmetry: bool,
     pub show_fps: bool,
     pub fps: Fps,
+    pub font: Font,
 }
 
 #[derive(Parser, Debug)]
@@ -58,5 +60,6 @@ pub fn model(app: &App) -> Model {
         last_mouse_pressed: None,
         show_fps: false,
         fps: Fps::default(),
+        font: load_font("jetbrains mono"),
     }
 }

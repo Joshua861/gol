@@ -1,14 +1,13 @@
-use super::Model;
-use crate::{clamp_camera, config::CONFIG};
+use super::{clamp_camera, Model};
+use crate::config::CONFIG;
 use nannou::prelude::*;
 
 pub fn mouse_wheel(_app: &App, model: &mut Model, delta: MouseScrollDelta, _phase: TouchPhase) {
     match delta {
         MouseScrollDelta::LineDelta(_, y) => {
-            let mult = y * CONFIG.zoom_speed * model.cache.scale_factor;
-            model.cache.target_tile_size += mult;
-            // model.cache.camera_offset.0 += mult;
-            // model.cache.camera_offset.1 += mult;
+            let cache = &mut model.cache;
+            let mult = y * CONFIG.zoom_speed * cache.scale_factor;
+            cache.target_tile_size += mult;
 
             clamp_camera(model);
         }

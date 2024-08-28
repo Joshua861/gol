@@ -1,6 +1,8 @@
 use rayon::prelude::*;
 
-use crate::{config::CONFIG, i_to_xy};
+use crate::config::CONFIG;
+
+use super::i_to_xy;
 
 pub struct Cache {
     pub half_board_width: f32,

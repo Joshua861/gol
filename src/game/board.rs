@@ -5,6 +5,8 @@ use serde::ser::SerializeStruct;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::HashSet;
 
+use crate::config::CONFIG;
+
 #[derive(Clone, Debug)]
 pub struct Board {
     pub tiles: Grid<bool>,
@@ -23,6 +25,7 @@ impl Board {
     pub fn advance(&mut self) {
         let width = self.width();
         let height = self.height();
+        let rule = &CONFIG.rule;
 
         let mut next_tiles = vec![false; width * height];
 
@@ -30,7 +33,7 @@ impl Board {
             let (x, y) = self.i_to_xy(i);
             let count = self.count_neighbors(x, y);
             let cell = self.get(x, y).unwrap_or(false);
-            *tile = (count == 3) || (cell && count == 2);
+            *tile = (!cell && rule.born(count)) || (cell && rule.survive(count));
         });
 
         self.tiles = Grid::from_vec(next_tiles, width);
@@ -71,6 +74,7 @@ impl Board {
         if let Some(tile) = self.tiles.get_mut(y, x) {
             *tile = value;
         } else {
+            #[cfg(debug_assertions)]
             eprintln!(
                 "Failed to set tile {}/{}.\n Board {{\n    width: {},\n    height: {},\n}}.",
                 x,
