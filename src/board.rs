@@ -1,14 +1,17 @@
 use grid::Grid;
 use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
+use serde::de;
+use serde::ser::SerializeStruct;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::HashSet;
 
 #[derive(Clone, Debug)]
-pub struct Game {
+pub struct Board {
     pub tiles: Grid<bool>,
     pub run_count: usize,
 }
 
-impl Game {
+impl Board {
     pub fn new(width: usize, height: usize) -> Self {
         let tiles = Grid::from_vec(vec![false; width * height], width);
 
@@ -49,19 +52,9 @@ impl Game {
 
         self.tiles.get(y, x).cloned().unwrap_or(false)
     }
-    // pub fn par_for_each(&self, f: impl Fn(usize, usize, bool) + Sync) {
-    //     vec![false; self.width() * self.height()]
-    //         .par_iter()
-    //         .enumerate()
-    //         .for_each(|(i, _)| {
-    //             let (x, y) = self.i_to_xy(i);
-    //
-    //             f(x, y, self.get(x, y).unwrap())
-    //         })
-    // }
     #[allow(clippy::comparison_chain)]
     pub fn set_wh(&mut self, w: usize, h: usize) {
-        let mut new_game = Game::new(w, h);
+        let mut new_game = Board::new(w, h);
 
         for (i, tile) in self.tiles.iter().enumerate() {
             let (x, y) = self.i_to_xy(i);
@@ -159,5 +152,54 @@ impl Game {
         coords.iter().for_each(|(x, y)| {
             self.set(*x, *y, to);
         });
+    }
+}
+
+impl Serialize for Board {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let width = self.width();
+        let height = self.height();
+        let binary_tiles: Vec<u8> = self.tiles.iter().map(|&b| if b { 1 } else { 0 }).collect();
+
+        let mut state = serializer.serialize_struct("Board", 3)?;
+        state.serialize_field("width", &width)?;
+        state.serialize_field("height", &height)?;
+        state.serialize_field("tiles", &binary_tiles)?;
+        state.serialize_field("run_count", &self.run_count)?;
+        state.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for Board {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct BoardData {
+            width: usize,
+            height: usize,
+            tiles: Vec<u8>,
+            run_count: usize,
+        }
+
+        let data = BoardData::deserialize(deserializer)?;
+
+        if data.tiles.len() != data.width * data.height {
+            return Err(de::Error::custom(
+                "Tile data length does not match width * height",
+            ));
+        }
+
+        let bool_tiles: Vec<bool> = data.tiles.into_iter().map(|b| b != 0).collect();
+        let grid = Grid::from_vec(bool_tiles, data.width);
+
+        Ok(Board {
+            tiles: grid,
+            run_count: data.run_count,
+        })
     }
 }

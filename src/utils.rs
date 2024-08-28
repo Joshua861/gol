@@ -1,4 +1,18 @@
+use lazy_static::lazy_static;
 use rand::Rng;
+
+#[cfg(not(debug_assertions))]
+lazy_static! {
+    pub static ref BASE_DIR: String = format!(
+        "{}/stuff_made_by_lily/GOL",
+        data_dir().unwrap().to_str().unwrap()
+    );
+}
+
+#[cfg(debug_assertions)]
+lazy_static! {
+    pub static ref BASE_DIR: String = ".".to_string();
+}
 
 #[macro_export]
 /// Randomly returns true or false based on the given chance.
