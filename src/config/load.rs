@@ -34,7 +34,7 @@ pub fn load() -> Config {
 #    Space: Play/pause
 #    S: Save game to file.
 #    D: Toggle symmetry.
-#    F: Show FPS.
+#    F: Show info.
 #    N: Advance one generation.
 
 {}"#,

@@ -2,8 +2,12 @@ use serde::de::{self, Visitor};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt;
 
-// just barely not enough bits to use a u16 (u17 would work).
 pub struct Rule(u32);
+
+#[derive(Deserialize)]
+struct RuleHolder {
+    rule: Rule,
+}
 
 impl Rule {
     pub fn survive(&self, count: u8) -> bool {
@@ -15,23 +19,13 @@ impl Rule {
     }
 
     pub fn from_str(rulestring: &str) -> Self {
-        #[derive(Deserialize)]
-        struct RuleHolder {
-            rule: Rule,
-        }
-
         let rule_holder: RuleHolder =
             toml::from_str(&format!("rule = \"{}\"", rulestring)).unwrap();
 
         rule_holder.rule
     }
-}
 
-impl Serialize for Rule {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
+    pub fn serialize(&self) -> String {
         let mut survive_str = String::new();
         let mut born_str = String::new();
 
@@ -47,9 +41,16 @@ impl Serialize for Rule {
             }
         }
 
-        let rulestring = format!("{}/{}", survive_str, born_str);
+        format!("{}/{}", survive_str, born_str)
+    }
+}
 
-        serializer.serialize_str(&rulestring)
+impl Serialize for Rule {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.serialize())
     }
 }
 

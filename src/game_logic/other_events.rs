@@ -20,7 +20,7 @@ pub fn key_pressed(_app: &App, model: &mut Model, key: Key) {
         Key::G => model.grid_lines = !model.grid_lines,
         Key::S => savestates::save(model.board.clone()),
         Key::D => model.symmetry = !model.symmetry,
-        Key::F => model.show_fps = !model.show_fps,
+        Key::F => model.show_info = !model.show_info,
         Key::N => model.board.advance(),
         _ => (),
     }

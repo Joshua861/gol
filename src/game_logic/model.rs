@@ -14,15 +14,20 @@ pub struct Model {
     pub mouse_pos: (f32, f32),
     pub grid_lines: bool,
     pub symmetry: bool,
-    pub show_fps: bool,
+    pub show_info: bool,
     pub fps: Fps,
     pub font: Font,
+    pub rulestring: String,
 }
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
+    #[arg(short, long)]
     load: Option<String>,
+
+    #[arg(short, long)]
+    print: Option<String>,
 }
 
 pub fn model(app: &App) -> Model {
@@ -37,15 +42,25 @@ pub fn model(app: &App) -> Model {
         .unwrap();
 
     let initial_tile_size = CONFIG.tile_size;
-    let board_size = (1, 1);
+
+    let rect = app.window_rect();
+    let width = (rect.w() / CONFIG.tile_size).ceil() as usize;
+    let height = (rect.h() / CONFIG.tile_size).ceil() as usize;
 
     let args = Args::parse();
-    let mut board = Board::new(1, 1);
+    let mut board = Board::new(width, height);
     let mut paused = false;
 
     if args.load.is_some() {
         board = savestates::load(args.load.unwrap());
+        board.set_wh(width, height);
         paused = true;
+    }
+
+    if args.print.is_some() {
+        let board = savestates::load(args.print.unwrap());
+        board.print();
+        app.quit();
     }
 
     Model {
@@ -53,13 +68,14 @@ pub fn model(app: &App) -> Model {
         paused,
         pressed: None,
         last_mouse_pos: (0., 0.),
-        cache: Cache::new(board_size, initial_tile_size),
+        cache: Cache::new((width, height), initial_tile_size),
         mouse_pos: (0.0, 0.0),
         grid_lines: false,
         symmetry: false,
         last_mouse_pressed: None,
-        show_fps: false,
+        show_info: false,
         fps: Fps::default(),
         font: load_font("jetbrains mono"),
+        rulestring: CONFIG.rule.serialize(),
     }
 }

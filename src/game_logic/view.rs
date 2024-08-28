@@ -2,6 +2,7 @@ use super::*;
 use crate::game::Board;
 use crate::time;
 use crate::timing::{clear_timers, get_timers};
+use crate::utils::VERSION;
 
 pub fn view(app: &App, model: &Model, frame: Frame) {
     let cache = &model.cache;
@@ -29,9 +30,11 @@ pub fn view(app: &App, model: &Model, frame: Frame) {
             });
         }
 
-        if model.show_fps {
-            draw_fps(&draw, model)
+        if model.show_info {
+            draw_info(&draw, model)
         }
+
+        clear_timers();
 
         draw.to_frame(app, &frame).unwrap();
     });
@@ -50,7 +53,7 @@ fn draw_background(draw: &Draw, cache: &Cache) {
         .color(CONFIG.background_color.to_srgb());
 }
 
-fn draw_fps(draw: &Draw, model: &Model) {
+fn draw_info(draw: &Draw, model: &Model) {
     let cache = &model.cache;
 
     let mut text = format!("{:.2} fps", model.fps.avg());
@@ -59,13 +62,34 @@ fn draw_fps(draw: &Draw, model: &Model) {
         text = format!("{} (paused)", text);
     }
 
+    text = format!(
+        "{}\ngrid: ({} x {})\nwindow: ({} x {})\nrulestring: {}\nv{}\ncamera offset: ({:.1} x {:.1})\nzoom: {}",
+        text,
+        model.cache.board_width,
+        model.cache.board_height,
+        model.cache.window_size.0,
+        model.cache.window_size.1,
+        model.rulestring,
+        VERSION,
+        model.cache.camera_offset.0,
+        model.cache.camera_offset.1,
+        model.cache.scale_factor
+    );
+
+    if model.symmetry {
+        text = format!("{}\nSymmetry on", text);
+    }
+
+    if model.grid_lines {
+        text = format!("{}\nGrid on", text);
+    }
+
     #[cfg(debug_assertions)]
     {
+        text += "\n";
         for timer in get_timers() {
             text = format!("{}\n{}", text, timer);
         }
-
-        clear_timers();
     }
 
     draw.text(&text)
