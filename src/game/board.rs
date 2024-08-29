@@ -7,17 +7,13 @@ use crate::config::CONFIG;
 #[derive(Clone, Debug)]
 pub struct Board {
     pub tiles: Grid<bool>,
-    pub run_count: usize,
 }
 
 impl Board {
     pub fn new(width: usize, height: usize) -> Self {
         let tiles = Grid::from_vec(vec![false; width * height], width);
 
-        Self {
-            tiles,
-            run_count: 0,
-        }
+        Self { tiles }
     }
     pub fn advance(&mut self) {
         let width = self.width();
@@ -34,7 +30,6 @@ impl Board {
         });
 
         self.tiles = Grid::from_vec(next_tiles, width);
-        self.run_count += 1;
     }
     pub fn width(&self) -> usize {
         self.tiles.cols()
@@ -54,15 +49,17 @@ impl Board {
     }
     pub fn set_wh(&mut self, w: usize, h: usize) {
         let mut new_game = Board::new(w, h);
-        let w = self.width().max(w);
-        let h = self.height().max(h);
-        let x_offset = (w - self.width()) / 2;
-        let y_offset = (h - self.height()) / 2;
+        let x_offset = (w as isize - self.width() as isize) / 2;
+        let y_offset = (h as isize - self.height() as isize) / 2;
 
         for (i, tile) in self.tiles.iter().enumerate() {
             let (x, y) = self.i_to_xy(i);
 
-            new_game.try_set(x + x_offset, y + y_offset, *tile);
+            new_game.try_set(
+                (x as isize + x_offset) as usize,
+                (y as isize + y_offset) as usize,
+                *tile,
+            );
         }
 
         *self = new_game
@@ -158,8 +155,12 @@ impl Board {
         });
     }
     pub fn print(&self) {
-        for r in self.tiles.iter_rows() {
-            r.for_each(|v| print!("{}", if *v { "##" } else { "  " }));
+        let mut b = self.clone();
+        b.tiles.flip_rows();
+        b.tiles.flip_cols();
+
+        for r in b.tiles.iter_rows() {
+            r.for_each(|v| print!("{}", if *v { "#" } else { " " }));
             println!();
         }
     }
