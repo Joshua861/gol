@@ -4,6 +4,7 @@ use clap::Parser;
 use fps_ticker::Fps;
 use nannou::text::Font;
 
+#[derive(Clone)]
 pub struct Model {
     pub board: Board,
     pub paused: bool,

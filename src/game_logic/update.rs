@@ -22,7 +22,7 @@ pub fn update(app: &App, model: &mut Model, _update: Update) {
         f(&mut cache.camera_offset.1, cache.target_camera_offset.1);
 
         if cache_needs_updating {
-            cache.gen_board_to_pixel_array();
+            cache.update(model.board.wh(), cache.tile_size);
         }
 
         model.cache.tile_size = model.cache.tile_size * (1.0 - smoothing_factor)

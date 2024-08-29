@@ -59,7 +59,7 @@ fn draw_info(draw: &Draw, model: &Model) {
     }
 
     text = format!(
-        "{}\ngrid: ({} x {})\nwindow: ({} x {})\nrulestring: {}\nv{}\ncamera offset: ({:.1} x {:.1})\nzoom: {}",
+        "{}\ngrid: ({} x {})\nwindow: ({} x {})\nrulestring: {}\nv{}\ncamera offset: ({:.1} x {:.1})\nzoom: {:.2}",
         text,
         model.cache.board_width,
         model.cache.board_height,

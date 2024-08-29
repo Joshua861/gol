@@ -2,10 +2,12 @@ use super::*;
 
 pub fn pixel_to_board(pixel: Vec2, cache: &Cache) -> (usize, usize) {
     (
-        (((pixel.x - cache.camera_offset.0) / cache.tile_size) + cache.half_board_width).round()
-            as usize,
-        (((pixel.y - cache.camera_offset.1) / cache.tile_size) + cache.half_board_height).round()
-            as usize,
+        (((pixel.x - cache.camera_offset.0 * cache.scale_factor) / cache.tile_size)
+            + cache.half_board_width)
+            .round() as usize,
+        (((pixel.y - cache.camera_offset.1 * cache.scale_factor) / cache.tile_size)
+            + cache.half_board_height)
+            .round() as usize,
     )
 }
 
@@ -37,10 +39,14 @@ pub fn i_to_xy(width: usize, i: usize) -> (usize, usize) {
 }
 
 pub fn clamp_camera(model: &mut Model) {
-    model.cache.target_tile_size = model
-        .cache
-        .target_tile_size
-        .clamp(CONFIG.tile_size / 2., 100.0);
+    if CONFIG.autosize_board {
+        model.cache.target_tile_size = model
+            .cache
+            .target_tile_size
+            .clamp(CONFIG.tile_size / 2., 100.0);
+    } else {
+        model.cache.target_tile_size = model.cache.target_tile_size.clamp(1., 100.0);
+    }
 
     let f = |board_side: usize, value: &mut f32| {
         let clamp_offset = (board_side as f32 * model.cache.tile_size) / 2.;
