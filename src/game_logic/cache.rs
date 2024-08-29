@@ -15,7 +15,6 @@ pub struct Cache {
     pub window_size: (f32, f32),
     pub target_tile_size: f32,
     pub target_camera_offset: (f32, f32),
-    pub board_to_pixel_array: Vec<(f32, f32)>,
 }
 
 impl Cache {
@@ -31,7 +30,6 @@ impl Cache {
             camera_offset: (0., 0.),
             window_size: (0., 0.),
             target_camera_offset: (0., 0.),
-            board_to_pixel_array: vec![],
         }
     }
 
@@ -48,8 +46,6 @@ impl Cache {
                     + (self.camera_offset.1 * self.scale_factor),
             )
         });
-
-        self.board_to_pixel_array = arr;
     }
 
     pub fn update(&mut self, board_size: (usize, usize), tile_size: f32) {

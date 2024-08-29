@@ -43,12 +43,23 @@ pub fn model(app: &App) -> Model {
 
     let initial_tile_size = CONFIG.tile_size;
 
-    let rect = app.window_rect();
-    let width = (rect.w() / CONFIG.tile_size).ceil() as usize;
-    let height = (rect.h() / CONFIG.tile_size).ceil() as usize;
+    let (mut board, width, height) = if CONFIG.autosize_board {
+        let rect = app.window_rect();
+        let width = (rect.w() / CONFIG.tile_size).ceil() as usize;
+        let height = (rect.h() / CONFIG.tile_size).ceil() as usize;
+
+        let board = Board::new(width, height);
+
+        (board, width, height)
+    } else {
+        (
+            Board::new(CONFIG.board_size.x, CONFIG.board_size.y),
+            CONFIG.board_size.x,
+            CONFIG.board_size.y,
+        )
+    };
 
     let args = Args::parse();
-    let mut board = Board::new(width, height);
     let mut paused = false;
 
     if args.load.is_some() {
@@ -63,7 +74,7 @@ pub fn model(app: &App) -> Model {
         app.quit();
     }
 
-    Model {
+    let mut model = Model {
         board,
         paused,
         pressed: None,
@@ -77,5 +88,9 @@ pub fn model(app: &App) -> Model {
         fps: Fps::default(),
         font: load_font("jetbrains mono"),
         rulestring: CONFIG.rule.serialize(),
-    }
+    };
+
+    model.cache.update((width, height), CONFIG.tile_size);
+
+    model
 }

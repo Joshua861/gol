@@ -10,12 +10,18 @@ pub fn pixel_to_board(pixel: Vec2, cache: &Cache) -> (usize, usize) {
 }
 
 pub fn board_xy_to_pixel(board: (usize, usize), cache: &Cache) -> (f32, f32) {
-    let i = board.0 + board.1 * cache.board_width;
-    cache.board_to_pixel_array[i]
+    let (x, y) = board;
+
+    (
+        (x as f32 - cache.half_board_width) * cache.tile_size
+            + (cache.camera_offset.0 * cache.scale_factor),
+        (y as f32 - cache.half_board_height) * cache.tile_size
+            + (cache.camera_offset.1 * cache.scale_factor),
+    )
 }
 
 pub fn board_to_pixel(i: usize, cache: &Cache) -> (f32, f32) {
-    cache.board_to_pixel_array[i]
+    board_xy_to_pixel(i_to_xy(cache.board_width, i), cache)
 }
 
 pub fn f32_to_vec2(f: (f32, f32)) -> Vec2 {

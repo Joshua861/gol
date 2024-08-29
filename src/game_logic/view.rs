@@ -7,10 +7,6 @@ use crate::utils::VERSION;
 pub fn view(app: &App, model: &Model, frame: Frame) {
     let cache = &model.cache;
 
-    if cache.board_to_pixel_array.is_empty() {
-        return;
-    }
-
     time!("view", {
         let draw = app.draw();
         let board = &model.board;
@@ -141,33 +137,34 @@ fn draw_highlight(draw: &Draw, model: &Model) {
 
 fn draw_grid_lines(draw: &Draw, cache: &Cache) {
     let mut weight = CONFIG.grid_thickness;
+    let ts = cache.tile_size;
 
     if CONFIG.scale_grid_with_zoom {
         weight *= cache.scale_factor;
     }
 
     let (x, y) = board_xy_to_pixel((0, 0), cache);
-    let mut x = x - 0.5 * cache.tile_size;
-    let y = y - 0.5 * cache.tile_size;
+    let mut x = x - 0.5 * ts;
+    let y = y - 0.5 * ts;
 
     for _ in 0..=cache.board_width {
         draw.line()
             .start(pt2(x, y))
-            .end(pt2(x, y + cache.board_height as f32 * cache.tile_size))
+            .end(pt2(x, y + cache.board_height as f32 * ts))
             .weight(weight)
             .color(CONFIG.grid_color.to_srgb());
 
-        x += cache.tile_size;
+        x += ts;
     }
 
     for i in 0..=cache.board_height {
         let (x, y) = board_xy_to_pixel((0, i), cache);
-        let x = x - 0.5 * cache.tile_size;
-        let y = y - 0.5 * cache.tile_size;
+        let x = x - 0.5 * ts;
+        let y = y - 0.5 * ts;
 
         draw.line()
             .start(pt2(x, y))
-            .end(pt2(x + cache.board_width as f32 * cache.tile_size, y))
+            .end(pt2(x + cache.board_width as f32 * ts, y))
             .weight(weight)
             .color(CONFIG.grid_color.to_srgb());
     }

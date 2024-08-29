@@ -1,5 +1,5 @@
 use self::load::load;
-use crate::game::Rule;
+use crate::{game::Rule, utils::VecU2};
 use color::*;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
@@ -27,8 +27,9 @@ pub struct Config {
     pub pan_speed: f32,
     pub text_color: Color,
     pub smoothing_factor: f32,
-    #[serde(alias = "rulestring")]
     pub rule: Rule,
+    pub autosize_board: bool,
+    pub board_size: VecU2,
 }
 
 impl Config {
@@ -52,6 +53,8 @@ impl Config {
             text_color: Color::new(0.95, 0.95, 0.95),
             smoothing_factor: 3.0,
             rule: Rule::from_str("23/3"),
+            autosize_board: false,
+            board_size: VecU2::new(1000, 1000),
         }
     }
     pub fn to_toml(&self) -> String {

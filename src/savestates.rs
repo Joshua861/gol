@@ -12,43 +12,7 @@ impl Serialize for Board {
         S: Serializer,
     {
         let mut board = self.clone();
-
-        while board.width() > 0 {
-            let mut first_col = board.tiles.iter_col(0);
-            if first_col.all(|v| !v) {
-                board.tiles.remove_col(0);
-            } else {
-                break;
-            }
-        }
-
-        while board.width() > 0 {
-            let mut last_col = board.tiles.iter_col(board.width() - 1);
-            if last_col.all(|v| !v) {
-                board.tiles.remove_col(board.width() - 1);
-            } else {
-                break;
-            }
-        }
-
-        while board.height() > 0 {
-            let mut first_row = board.tiles.iter_row(0);
-            if first_row.all(|v| !v) {
-                board.tiles.remove_row(0);
-            } else {
-                break;
-            }
-        }
-
-        while board.height() > 0 {
-            let mut last_row = board.tiles.iter_row(board.height() - 1);
-            if last_row.all(|v| !v) {
-                board.tiles.remove_row(board.height() - 1);
-            } else {
-                break;
-            }
-        }
-
+        board.crop();
         let width = board.width();
 
         let mut bv: BitVec<u8, Lsb0> = BitVec::new();

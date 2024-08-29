@@ -107,6 +107,29 @@ impl Board {
     pub fn clear(&mut self) {
         *self = Self::new(self.width(), self.height());
     }
+    pub fn crop(&mut self) {
+        for _ in 0..2 {
+            while self.width() > 0 {
+                let mut first_col = self.tiles.iter_col(0);
+                if first_col.all(|v| !v) {
+                    self.tiles.remove_col(0);
+                } else {
+                    break;
+                }
+            }
+
+            while self.height() > 0 {
+                let mut first_row = self.tiles.iter_row(0);
+                if first_row.all(|v| !v) {
+                    self.tiles.remove_row(0);
+                } else {
+                    break;
+                }
+            }
+
+            self.tiles.rotate_half();
+        }
+    }
     pub fn draw_line(
         &mut self,
         start_x: usize,
