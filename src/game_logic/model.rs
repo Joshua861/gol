@@ -1,10 +1,10 @@
 use super::*;
-use crate::prelude::*;
+use crate::{prelude::*, ui::notify_info, Asset};
 use clap::Parser;
 use fps_ticker::Fps;
 use grid::Grid;
 use nannou::text::Font;
-use std::fs;
+use std::str;
 
 #[derive(Clone)]
 pub struct Model {
@@ -73,6 +73,7 @@ pub fn model(app: &App) -> Model {
         board = load_savestate(args.load.unwrap());
         board.set_wh(width, height);
         paused = true;
+        notify_info("Savestate loaded.");
     }
 
     if args.print.is_some() {
@@ -96,12 +97,16 @@ pub fn model(app: &App) -> Model {
         font: load_font(&CONFIG.font_name),
         rulestring: CONFIG.rule.serialize(),
         selection: None,
-        keybinds: fs::read_to_string("assets/keybinds.txt").unwrap_or_default(),
+        keybinds: str::from_utf8(Asset::get("keybinds.txt").unwrap().data.as_ref())
+            .unwrap()
+            .to_string(),
         show_keybinds: false,
         clipboard: None,
     };
 
     model.cache.update((width, height), CONFIG.tile_size);
+
+    notify_info("Press K to show keybinds");
 
     model
 }

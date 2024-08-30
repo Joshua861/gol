@@ -1,6 +1,6 @@
 use self::load::load;
 use crate::{game::Rule, utils::VecU2};
-use color::*;
+pub use color::*;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
@@ -36,6 +36,8 @@ pub struct Config {
     pub font_name: String,
     pub font_size: u32,
     pub window_color: Color,
+    pub info_color: Color,
+    pub error_color: Color,
 }
 
 impl Config {
@@ -67,6 +69,8 @@ impl Config {
             font_name: String::from("jetbrains mono"),
             font_size: 24,
             window_color: Color::new(0.2, 0.2, 0.2),
+            info_color: Color::hex(0x51aee9),
+            error_color: Color::hex(0xcc6b70),
         }
     }
     pub fn to_toml(&self) -> String {

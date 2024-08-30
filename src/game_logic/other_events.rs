@@ -28,12 +28,13 @@ pub fn key_pressed(app: &App, model: &mut Model, key: Key) {
                     clear(model);
                 }
             }
-            // Key::X => {
-            //     if let Some(selection) = model.selection.take() {
-            //         selection.cut(model);
-            //         clear(model);
-            //     }
-            // }
+            Key::X => {
+                if let Some(selection) = model.selection.take() {
+                    selection.copy(model);
+                    selection.clear(model);
+                    clear(model);
+                }
+            }
             Key::S => {
                 save_board(model.board.clone());
                 clear(model)

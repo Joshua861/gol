@@ -1,6 +1,7 @@
 use crate::prelude::*;
 use crate::time;
 use crate::timing::clear_timers;
+use crate::ui::draw_notifications;
 use crate::ui::{draw_info, Window};
 
 pub fn view(app: &App, model: &Model, frame: Frame) {
@@ -29,13 +30,17 @@ pub fn view(app: &App, model: &Model, frame: Frame) {
             selection.render(&draw, cache);
         }
 
+        time!("notifications", {
+            draw_notifications(app, &draw, model);
+        });
+
+        draw_info(&draw, model);
+
         Window::new()
             .text(&model.keybinds)
             .open(model.show_keybinds)
             .build()
             .render(&draw, cache, model);
-
-        draw_info(&draw, model);
 
         clear_timers();
 

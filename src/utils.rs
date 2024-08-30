@@ -1,10 +1,12 @@
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::fs;
+use std::{fs, io::Read};
 
 #[cfg(not(debug_assertions))]
 use dirs::data_dir;
 use lazy_static::lazy_static;
 use nannou::text::Font;
+
+use crate::Asset;
 
 #[cfg(not(debug_assertions))]
 lazy_static! {
@@ -22,7 +24,8 @@ lazy_static! {
 }
 
 pub fn load_font(name: &str) -> Font {
-    Font::from_bytes(fs::read(format!("assets/fonts/{}.ttf", name)).unwrap()).unwrap()
+    let asset = Asset::get(&format!("fonts/{}.ttf", name)).unwrap().data;
+    Font::from_bytes(asset.into_owned()).unwrap()
 }
 
 #[derive(Clone, Copy)]
