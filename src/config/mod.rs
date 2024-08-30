@@ -1,10 +1,10 @@
 use self::load::load;
-use crate::game::Rule;
+use crate::{game::Rule, utils::VecU2};
 use color::*;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
-mod color;
+pub mod color;
 mod load;
 
 lazy_static! {
@@ -27,8 +27,15 @@ pub struct Config {
     pub pan_speed: f32,
     pub text_color: Color,
     pub smoothing_factor: f32,
-    #[serde(alias = "rulestring")]
     pub rule: Rule,
+    pub autosize_board: bool,
+    pub board_size: VecU2,
+    pub parallel_board_processing: bool,
+    pub selection_color: Color,
+    pub selection_thickness: f32,
+    pub font_name: String,
+    pub font_size: u32,
+    pub window_color: Color,
 }
 
 impl Config {
@@ -44,7 +51,7 @@ impl Config {
             cell_color_highlighted: Color::new(0.8, 0.8, 0.8),
             background_color_highlighted: Color::new(0.2, 0.2, 0.2),
             zoom_speed: 1.0,
-            grid_color: Color::new(0.35, 0.35, 0.35),
+            grid_color: Color::new(0.2, 0.2, 0.2),
             grid_thickness: 1.0,
             scale_grid_with_zoom: false,
             pan_speed: 5.,
@@ -52,6 +59,14 @@ impl Config {
             text_color: Color::new(0.95, 0.95, 0.95),
             smoothing_factor: 3.0,
             rule: Rule::from_str("23/3"),
+            autosize_board: false,
+            board_size: VecU2::new(700, 700),
+            parallel_board_processing: true,
+            selection_color: Color::hex(0x4ba4f2),
+            selection_thickness: 4.0,
+            font_name: String::from("jetbrains mono"),
+            font_size: 24,
+            window_color: Color::new(0.2, 0.2, 0.2),
         }
     }
     pub fn to_toml(&self) -> String {

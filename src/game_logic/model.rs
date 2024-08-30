@@ -1,9 +1,12 @@
 use super::*;
-use crate::{game::Board, savestates, utils::load_font};
+use crate::prelude::*;
 use clap::Parser;
 use fps_ticker::Fps;
+use grid::Grid;
 use nannou::text::Font;
+use std::fs;
 
+#[derive(Clone)]
 pub struct Model {
     pub board: Board,
     pub paused: bool,
@@ -18,6 +21,10 @@ pub struct Model {
     pub fps: Fps,
     pub font: Font,
     pub rulestring: String,
+    pub selection: Option<Selection>,
+    pub keybinds: String,
+    pub show_keybinds: bool,
+    pub clipboard: Option<Grid<bool>>,
 }
 
 #[derive(Parser, Debug)]
@@ -43,27 +50,38 @@ pub fn model(app: &App) -> Model {
 
     let initial_tile_size = CONFIG.tile_size;
 
-    let rect = app.window_rect();
-    let width = (rect.w() / CONFIG.tile_size).ceil() as usize;
-    let height = (rect.h() / CONFIG.tile_size).ceil() as usize;
+    let (mut board, width, height) = if CONFIG.autosize_board {
+        let rect = app.window_rect();
+        let width = (rect.w() / CONFIG.tile_size).ceil() as usize;
+        let height = (rect.h() / CONFIG.tile_size).ceil() as usize;
+
+        let board = Board::new(width, height);
+
+        (board, width, height)
+    } else {
+        (
+            Board::new(CONFIG.board_size.x, CONFIG.board_size.y),
+            CONFIG.board_size.x,
+            CONFIG.board_size.y,
+        )
+    };
 
     let args = Args::parse();
-    let mut board = Board::new(width, height);
     let mut paused = false;
 
     if args.load.is_some() {
-        board = savestates::load(args.load.unwrap());
+        board = load_savestate(args.load.unwrap());
         board.set_wh(width, height);
         paused = true;
     }
 
     if args.print.is_some() {
-        let board = savestates::load(args.print.unwrap());
+        let board = load_savestate(args.print.unwrap());
         board.print();
         app.quit();
     }
 
-    Model {
+    let mut model = Model {
         board,
         paused,
         pressed: None,
@@ -75,7 +93,15 @@ pub fn model(app: &App) -> Model {
         last_mouse_pressed: None,
         show_info: false,
         fps: Fps::default(),
-        font: load_font("jetbrains mono"),
+        font: load_font(&CONFIG.font_name),
         rulestring: CONFIG.rule.serialize(),
-    }
+        selection: None,
+        keybinds: fs::read_to_string("assets/keybinds.txt").unwrap_or_default(),
+        show_keybinds: false,
+        clipboard: None,
+    };
+
+    model.cache.update((width, height), CONFIG.tile_size);
+
+    model
 }

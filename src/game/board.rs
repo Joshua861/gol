@@ -1,40 +1,79 @@
-use grid::Grid;
-use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
+use crate::prelude::*;
+use rayon::prelude::*;
 use std::collections::HashSet;
 
-use crate::config::CONFIG;
+use crate::{config::CONFIG, game_logic::i_to_xy};
 
 #[derive(Clone, Debug)]
 pub struct Board {
     pub tiles: Grid<bool>,
-    pub run_count: usize,
 }
 
 impl Board {
     pub fn new(width: usize, height: usize) -> Self {
         let tiles = Grid::from_vec(vec![false; width * height], width);
 
-        Self {
-            tiles,
-            run_count: 0,
-        }
+        Self { tiles }
     }
     pub fn advance(&mut self) {
-        let width = self.width();
-        let height = self.height();
-        let rule = &CONFIG.rule;
+        if !CONFIG.parallel_board_processing {
+            let width = self.width();
+            let rule = &CONFIG.rule;
 
-        let mut next_tiles = vec![false; width * height];
+            let mut next_tiles = self.clone();
 
-        next_tiles.par_iter_mut().enumerate().for_each(|(i, tile)| {
-            let (x, y) = self.i_to_xy(i);
-            let count = self.count_neighbors(x, y);
-            let cell = self.get(x, y).unwrap_or(false);
-            *tile = (!cell && rule.born(count)) || (cell && rule.survive(count));
-        });
+            let mut active_tiles = self
+                .tiles
+                .iter()
+                .enumerate()
+                .filter(|(_, v)| **v)
+                .map(|(i, _)| i_to_xy(width, i))
+                .collect::<HashSet<_>>();
 
-        self.tiles = Grid::from_vec(next_tiles, width);
-        self.run_count += 1;
+            active_tiles.clone().iter().for_each(|&(x, y)| {
+                [
+                    [1, 1],
+                    [1, 0],
+                    [0, 1],
+                    [-1, 0],
+                    [0, -1],
+                    [-1, -1],
+                    [-1, 1],
+                    [1, -1],
+                ]
+                .iter()
+                .for_each(|[dx, dy]| {
+                    active_tiles.insert(((dx + x as isize) as usize, (dy + y as isize) as usize));
+                })
+            });
+
+            for (x, y) in active_tiles.into_iter() {
+                let count = self.count_neighbors(x, y);
+                let cell = self.get(x, y).unwrap_or(false);
+                next_tiles.set(
+                    x,
+                    y,
+                    (!cell && rule.born(count)) || (cell && rule.survive(count)),
+                );
+            }
+
+            *self = next_tiles;
+        } else {
+            let width = self.width();
+            let height = self.height();
+            let rule = &CONFIG.rule;
+
+            let mut next_tiles = vec![false; width * height];
+
+            next_tiles.par_iter_mut().enumerate().for_each(|(i, tile)| {
+                let (x, y) = self.i_to_xy(i);
+                let count = self.count_neighbors(x, y);
+                let cell = self.get(x, y).unwrap_or(false);
+                *tile = (!cell && rule.born(count)) || (cell && rule.survive(count));
+            });
+
+            self.tiles = Grid::from_vec(next_tiles, width);
+        }
     }
     pub fn width(&self) -> usize {
         self.tiles.cols()
@@ -54,15 +93,17 @@ impl Board {
     }
     pub fn set_wh(&mut self, w: usize, h: usize) {
         let mut new_game = Board::new(w, h);
-        let w = self.width().max(w);
-        let h = self.height().max(h);
-        let x_offset = (w - self.width()) / 2;
-        let y_offset = (h - self.height()) / 2;
+        let x_offset = (w as isize - self.width() as isize) / 2;
+        let y_offset = (h as isize - self.height() as isize) / 2;
 
         for (i, tile) in self.tiles.iter().enumerate() {
             let (x, y) = self.i_to_xy(i);
 
-            new_game.try_set(x + x_offset, y + y_offset, *tile);
+            new_game.try_set(
+                (x as isize + x_offset) as usize,
+                (y as isize + y_offset) as usize,
+                *tile,
+            );
         }
 
         *self = new_game
@@ -73,15 +114,6 @@ impl Board {
     pub fn set(&mut self, x: usize, y: usize, value: bool) {
         if let Some(tile) = self.tiles.get_mut(y, x) {
             *tile = value;
-        } else {
-            #[cfg(debug_assertions)]
-            eprintln!(
-                "Failed to set tile {}/{}.\n Board {{\n    width: {},\n    height: {},\n}}.",
-                x,
-                y,
-                self.width(),
-                self.height()
-            );
         }
     }
     pub fn try_set(&mut self, x: usize, y: usize, value: bool) -> Option<()> {
@@ -104,11 +136,44 @@ impl Board {
         }
         count
     }
+    pub fn set_area(&mut self, pos: VecU2, tiles: &Grid<bool>) {
+        let (dx, dy) = pos.to_tuple();
+        let (w, h) = (tiles.cols(), tiles.rows());
+
+        for x in 0..w {
+            for y in 0..h {
+                self.set(x + dx, y + dy, *tiles.get(y, x).unwrap());
+            }
+        }
+    }
     pub fn i_to_xy(&self, i: usize) -> (usize, usize) {
         (i % self.width(), i / self.width())
     }
     pub fn clear(&mut self) {
         *self = Self::new(self.width(), self.height());
+    }
+    pub fn crop(&mut self) {
+        for _ in 0..2 {
+            while self.width() > 0 {
+                let mut first_col = self.tiles.iter_col(0);
+                if first_col.all(|v| !v) {
+                    self.tiles.remove_col(0);
+                } else {
+                    break;
+                }
+            }
+
+            while self.height() > 0 {
+                let mut first_row = self.tiles.iter_row(0);
+                if first_row.all(|v| !v) {
+                    self.tiles.remove_row(0);
+                } else {
+                    break;
+                }
+            }
+
+            self.tiles.rotate_half();
+        }
     }
     pub fn draw_line(
         &mut self,
@@ -158,9 +223,6 @@ impl Board {
         });
     }
     pub fn print(&self) {
-        for r in self.tiles.iter_rows() {
-            r.for_each(|v| print!("{}", if *v { "##" } else { "  " }));
-            println!();
-        }
+        print_grid(self.tiles.clone());
     }
 }
