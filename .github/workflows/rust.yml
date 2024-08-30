@@ -35,6 +35,13 @@ jobs:
           PRE_BUILD: "pre_build.sh"
           POST_BUILD: "test/post_build.sh"
           MINIFY: "yes"
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Binary
+          path: |
+            ${{ steps.compile.outputs.BUILT_ARCHIVE }}
+            ${{ steps.compile.outputs.BUILT_CHECKSUM }}
   release_without_not_required:
     name: release ${{ matrix.target }}
     runs-on: ubuntu-latest
