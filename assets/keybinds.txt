@@ -7,4 +7,10 @@ Keybinds:
    D: Toggle symetry.
    N: Advance one generation.
    Esc: Close window.
-   S: Save game to file.
+   Ctrl+S: Save game to file.
+   Ctrl+click+drag: Select cells.
+   Ctrl+C: Copy selection.
+   Ctrl+X: Cut selection.
+   Ctrl+V: Paste selection.
+   Q/E: Rotate selection CCW/CW.
+   W/A/S/D: Translate selection.
