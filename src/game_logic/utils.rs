@@ -1,4 +1,4 @@
-use super::*;
+use crate::prelude::*;
 
 pub fn pixel_to_board(pixel: Vec2, cache: &Cache) -> (usize, usize) {
     (
@@ -49,7 +49,7 @@ pub fn clamp_camera(model: &mut Model) {
     }
 
     let f = |board_side: usize, value: &mut f32| {
-        let clamp_offset = (board_side as f32 * model.cache.tile_size) / 2.;
+        let clamp_offset = (board_side as f32 * CONFIG.tile_size) / 2.;
         *value = value.clamp(-clamp_offset, clamp_offset);
     };
 
@@ -58,4 +58,15 @@ pub fn clamp_camera(model: &mut Model) {
         model.board.height(),
         &mut model.cache.target_camera_offset.1,
     );
+}
+
+pub fn print_grid(grid: Grid<bool>) {
+    let mut tiles = grid.clone();
+    tiles.flip_rows();
+    tiles.flip_cols();
+
+    for r in tiles.iter_rows() {
+        r.for_each(|v| print!("{}", if *v { "#" } else { " " }));
+        println!();
+    }
 }

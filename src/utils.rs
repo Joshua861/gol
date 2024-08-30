@@ -25,6 +25,7 @@ pub fn load_font(name: &str) -> Font {
     Font::from_bytes(fs::read(format!("assets/fonts/{}.ttf", name)).unwrap()).unwrap()
 }
 
+#[derive(Clone, Copy)]
 pub struct VecU2 {
     pub x: usize,
     pub y: usize,
@@ -33,6 +34,9 @@ pub struct VecU2 {
 impl VecU2 {
     pub fn new(x: usize, y: usize) -> Self {
         Self { x, y }
+    }
+    pub fn to_tuple(&self) -> (usize, usize) {
+        (self.x, self.y)
     }
 }
 
@@ -56,5 +60,14 @@ impl<'de> Deserialize<'de> for VecU2 {
             x: parts[0].parse().unwrap(),
             y: parts[1].parse().unwrap(),
         })
+    }
+}
+
+impl From<(usize, usize)> for VecU2 {
+    fn from(tuple: (usize, usize)) -> Self {
+        Self {
+            x: tuple.0,
+            y: tuple.1,
+        }
     }
 }

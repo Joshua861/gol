@@ -1,8 +1,10 @@
 use super::*;
-use crate::{game::Board, savestates, utils::load_font};
+use crate::prelude::*;
 use clap::Parser;
 use fps_ticker::Fps;
+use grid::Grid;
 use nannou::text::Font;
+use std::fs;
 
 #[derive(Clone)]
 pub struct Model {
@@ -19,6 +21,10 @@ pub struct Model {
     pub fps: Fps,
     pub font: Font,
     pub rulestring: String,
+    pub selection: Option<Selection>,
+    pub keybinds: String,
+    pub show_keybinds: bool,
+    pub clipboard: Option<Grid<bool>>,
 }
 
 #[derive(Parser, Debug)]
@@ -64,13 +70,13 @@ pub fn model(app: &App) -> Model {
     let mut paused = false;
 
     if args.load.is_some() {
-        board = savestates::load(args.load.unwrap());
+        board = load_savestate(args.load.unwrap());
         board.set_wh(width, height);
         paused = true;
     }
 
     if args.print.is_some() {
-        let board = savestates::load(args.print.unwrap());
+        let board = load_savestate(args.print.unwrap());
         board.print();
         app.quit();
     }
@@ -87,8 +93,12 @@ pub fn model(app: &App) -> Model {
         last_mouse_pressed: None,
         show_info: false,
         fps: Fps::default(),
-        font: load_font("jetbrains mono"),
+        font: load_font(&CONFIG.font_name),
         rulestring: CONFIG.rule.serialize(),
+        selection: None,
+        keybinds: fs::read_to_string("assets/keybinds.txt").unwrap_or_default(),
+        show_keybinds: false,
+        clipboard: None,
     };
 
     model.cache.update((width, height), CONFIG.tile_size);

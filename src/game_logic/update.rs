@@ -1,5 +1,4 @@
-use super::*;
-use crate::time;
+use crate::prelude::*;
 
 pub fn update(app: &App, model: &mut Model, _update: Update) {
     let cache = &mut model.cache;
@@ -33,54 +32,56 @@ pub fn update(app: &App, model: &mut Model, _update: Update) {
         time!("advance", { model.board.advance() });
     }
     if let Some(button) = model.pressed {
-        let mut set = |to: bool| {
-            let pos = app.mouse.position();
-            let (x, y) = pixel_to_board(pos, &model.cache);
+        if model.selection.is_none() {
+            let mut set = |to: bool| {
+                let pos = app.mouse.position();
+                let (x, y) = pixel_to_board(pos, &model.cache);
 
-            let (board_width, board_height) = model.board.wh();
+                let (board_width, board_height) = model.board.wh();
 
-            let mut set_tile = |x, y, to| {
-                model.board.set(x, y, to);
+                let mut set_tile = |x, y, to| {
+                    model.board.set(x, y, to);
 
-                if model.symmetry {
-                    let x_mirrored = board_width.saturating_sub(1 + x);
-                    model.board.set(x_mirrored, y, to);
+                    if model.symmetry {
+                        let x_mirrored = board_width.saturating_sub(1 + x);
+                        model.board.set(x_mirrored, y, to);
 
-                    let y_mirrored = board_height.saturating_sub(1 + y);
-                    model.board.set(x, y_mirrored, to);
+                        let y_mirrored = board_height.saturating_sub(1 + y);
+                        model.board.set(x, y_mirrored, to);
 
-                    model.board.set(x_mirrored, y_mirrored, to);
+                        model.board.set(x_mirrored, y_mirrored, to);
+                    }
+                };
+
+                if model
+                    .last_mouse_pressed
+                    .is_some_and(|last_button| button == last_button)
+                {
+                    let (px, py) = pixel_to_board(f32_to_vec2(model.last_mouse_pos), &model.cache);
+
+                    model.board.draw_line(x, y, px, py, to);
+                    if model.symmetry {
+                        let x_mirrored = (board_width).saturating_sub(1 + x);
+                        let px_mirrored = (board_width).saturating_sub(1 + px);
+                        let y_mirrored = (board_height).saturating_sub(1 + y);
+                        let py_mirrored = (board_height).saturating_sub(1 + py);
+
+                        model.board.draw_line(x_mirrored, y, px_mirrored, py, to);
+                        model.board.draw_line(x, y_mirrored, px, py_mirrored, to);
+                        model
+                            .board
+                            .draw_line(x_mirrored, y_mirrored, px_mirrored, py_mirrored, to);
+                    }
+                } else {
+                    set_tile(x, y, to);
                 }
             };
 
-            if model
-                .last_mouse_pressed
-                .is_some_and(|last_button| button == last_button)
-            {
-                let (px, py) = pixel_to_board(f32_to_vec2(model.last_mouse_pos), &model.cache);
-
-                model.board.draw_line(x, y, px, py, to);
-                if model.symmetry {
-                    let x_mirrored = (board_width).saturating_sub(1 + x);
-                    let px_mirrored = (board_width).saturating_sub(1 + px);
-                    let y_mirrored = (board_height).saturating_sub(1 + y);
-                    let py_mirrored = (board_height).saturating_sub(1 + py);
-
-                    model.board.draw_line(x_mirrored, y, px_mirrored, py, to);
-                    model.board.draw_line(x, y_mirrored, px, py_mirrored, to);
-                    model
-                        .board
-                        .draw_line(x_mirrored, y_mirrored, px_mirrored, py_mirrored, to);
-                }
-            } else {
-                set_tile(x, y, to);
+            match button {
+                MouseButton::Left => set(true),
+                MouseButton::Right => set(false),
+                _ => (),
             }
-        };
-
-        match button {
-            MouseButton::Left => set(true),
-            MouseButton::Right => set(false),
-            _ => (),
         }
 
         model.last_mouse_pos = vec2_to_f32(app.mouse.position());

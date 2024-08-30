@@ -26,21 +26,6 @@ pub fn load() -> Config {
 
         let text = Config::default().to_toml();
 
-        let text = format!(
-            r#"# Keybinds:
-#    Esc: Close window,
-#    G: Show grid lines,
-#    C: Clear grid,
-#    Space: Play/pause
-#    S: Save game to file.
-#    D: Toggle symmetry.
-#    F: Show info.
-#    N: Advance one generation.
-
-{}"#,
-            text
-        );
-
         fs::write(config_path, text).expect("Failed to write default values to config file");
 
         Config::default()
@@ -48,5 +33,8 @@ pub fn load() -> Config {
 }
 
 fn config_path() -> String {
-    BASE_DIR.to_string() + "/config.toml"
+    let path = BASE_DIR.to_string() + "/config.toml";
+    dbg!(&path);
+
+    path
 }

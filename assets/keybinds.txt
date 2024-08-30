@@ -1,0 +1,10 @@
+Keybinds:
+   Space: Play/pause.
+   K: Show/hide keybinds.
+   G: Toggle grid.
+   C: Clear grid.
+   F: Toggle info.
+   D: Toggle symetry.
+   N: Advance one generation.
+   Esc: Close window.
+   S: Save game to file.

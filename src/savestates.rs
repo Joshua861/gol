@@ -49,7 +49,7 @@ impl<'de> Deserialize<'de> for Board {
     }
 }
 
-pub fn save(board: Board) {
+pub fn save_board(board: Board) {
     let time = Local::now();
     let id = format!(
         "{}-{}-{} {}:{}",
@@ -65,7 +65,7 @@ pub fn save(board: Board) {
         .unwrap_or_else(|e| eprintln!("Failed to save board state: {}", e));
 }
 
-pub fn load(id: String) -> Board {
+pub fn load_savestate(id: String) -> Board {
     let text = fs::read(format!("{}/{}.gol", savestate_dir(), id)).unwrap();
 
     bincode::deserialize(&text).unwrap()
