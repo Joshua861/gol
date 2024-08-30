@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{prelude::*, ui::notify_info};
 
 pub fn window_resized(_app: &App, model: &mut Model, rect: Vec2) {
     if CONFIG.autosize_board {
@@ -37,6 +37,7 @@ pub fn key_pressed(app: &App, model: &mut Model, key: Key) {
             }
             Key::S => {
                 save_board(model.board.clone());
+                notify_info("Board saved to file.");
                 clear(model)
             }
             Key::V => {
