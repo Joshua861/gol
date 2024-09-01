@@ -15,50 +15,34 @@ Conways game of life app implemented in Rust, using [Nannou](https://nannou.cc/)
 
 ## Screenshots
 
+### Glider launcher
+
 ![Glider launcher](screenshots/glider-launcher.png)
 
-_Glider launcher_
-
----
+### Big A
 
 ![Big A](screenshots/big-a.png)
 
-_Big A_
-
----
+### Menger sponge
 
 ![Menger sponge](screenshots/sponge.png)
 
-_Menger sponge_
-
----
+### Maze (custom rulestring)
 
 ![Maze](screenshots/maze.png)
 
-_Maze_
-
----
+### Config file
 
 ![Config](screenshots/config.png)
 
-_Config_
-
----
+### Custom colors
 
 ![Custom colors](screenshots/custom-colors.png)
 
-_Custom colors_
-
----
+### Keybinds (press K)
 
 ![Keybinds](screenshots/keybinds.png)
 
-_Keybinds_
-
----
+### Info
 
 ![Info](screenshots/info.png)
-
-_Info_
-
----
