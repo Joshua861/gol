@@ -1,10 +1,9 @@
 use super::*;
-use crate::{prelude::*, ui::notify_info, Asset};
+use crate::{prelude::*, ui::notify_info};
 use clap::Parser;
 use fps_ticker::Fps;
 use grid::Grid;
 use nannou::text::Font;
-use std::str;
 
 #[derive(Clone)]
 pub struct Model {
@@ -25,6 +24,12 @@ pub struct Model {
     pub keybinds: String,
     pub show_keybinds: bool,
     pub clipboard: Option<Grid<bool>>,
+}
+
+impl Model {
+    pub fn delta_time(&self) -> f32 {
+        1. / self.fps.avg() as f32
+    }
 }
 
 #[derive(Parser, Debug)]
@@ -94,12 +99,10 @@ pub fn model(app: &App) -> Model {
         last_mouse_pressed: None,
         show_info: false,
         fps: Fps::default(),
-        font: load_font(&CONFIG.font_name),
+        font: load_font(),
         rulestring: CONFIG.rule.serialize(),
         selection: None,
-        keybinds: str::from_utf8(Asset::get("keybinds.txt").unwrap().data.as_ref())
-            .unwrap()
-            .to_string(),
+        keybinds: include_str!("../../assets/keybinds.txt").to_string(),
         show_keybinds: false,
         clipboard: None,
     };

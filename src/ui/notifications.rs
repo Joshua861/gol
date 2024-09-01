@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use lazy_static::lazy_static;
-use std::{fmt::Display, sync::RwLock, time::Duration};
+use std::{fmt::Display, sync::RwLock};
 
 lazy_static! {
     static ref STATE: RwLock<NotificationState> = RwLock::new(NotificationState::new());

@@ -37,7 +37,7 @@ impl VecU2 {
     pub fn new(x: usize, y: usize) -> Self {
         Self { x, y }
     }
-    pub fn to_tuple(&self) -> (usize, usize) {
+    pub fn as_tuple(&self) -> (usize, usize) {
         (self.x, self.y)
     }
 }

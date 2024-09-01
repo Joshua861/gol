@@ -184,8 +184,8 @@ impl Selection {
 }
 
 pub fn outline(draw: &Draw, cache: &Cache, start: VecU2, end: VecU2) {
-    let (sx, sy) = board_xy_to_pixel(start.to_tuple(), cache);
-    let (ex, ey) = board_xy_to_pixel(end.to_tuple(), cache);
+    let (sx, sy) = board_xy_to_pixel(start.as_tuple(), cache);
+    let (ex, ey) = board_xy_to_pixel(end.as_tuple(), cache);
     let rect = Rect::from_corners(Vec2::new(sx, sy), Vec2::new(ex, ey));
 
     let offset = 0.5 * cache.tile_size;

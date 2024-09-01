@@ -137,7 +137,7 @@ impl Board {
         count
     }
     pub fn set_area(&mut self, pos: VecU2, tiles: &Grid<bool>) {
-        let (dx, dy) = pos.to_tuple();
+        let (dx, dy) = pos.as_tuple();
         let (w, h) = (tiles.cols(), tiles.rows());
 
         for x in 0..w {
