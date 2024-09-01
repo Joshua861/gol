@@ -80,7 +80,6 @@ impl Selection {
             for dy in 0..h {
                 let (x, y) = (min_x + dx, min_y + dy);
 
-                println!("{}, {}", x, y);
                 model.board.set(x, y, false);
             }
         }

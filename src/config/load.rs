@@ -1,6 +1,6 @@
 use std::{env, fs};
 
-use crate::utils::BASE_DIR;
+use crate::{prelude::notify_info, utils::BASE_DIR};
 
 use super::Config;
 
@@ -12,7 +12,7 @@ pub fn load() -> Config {
     if let Ok(text) = text {
         return toml::from_str(text.as_str()).unwrap_or(Config::default());
     } else {
-        println!("Failed to read config file; using default values.");
+        notify_info("Failed to read config file; using default values.");
 
         #[allow(deprecated)]
         let path = config_path

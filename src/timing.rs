@@ -1,6 +1,6 @@
-use std::{fmt::Display, sync::RwLock};
-
+use crate::prelude::*;
 use lazy_static::lazy_static;
+use std::{fmt::Display, sync::RwLock};
 
 lazy_static! {
     pub static ref TIMERS: RwLock<Vec<Timer>> = RwLock::new(Vec::new());
@@ -39,6 +39,6 @@ pub struct Timer {
 
 impl Display for Timer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}: {}μs", self.name, self.time)
+        write!(f, "{}: {}μs", self.name, fmt_num(self.time))
     }
 }

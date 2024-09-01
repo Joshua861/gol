@@ -4,7 +4,7 @@ use crate::timing::get_timers;
 pub fn draw_info(draw: &Draw, model: &Model) {
     let cache = &model.cache;
 
-    let mut text = format!("{:.2} fps", model.fps.avg());
+    let mut text = format!("{:.0} fps", model.fps.avg());
 
     if model.paused {
         text = format!("{} (paused)", text);

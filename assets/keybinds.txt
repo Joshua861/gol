@@ -4,7 +4,7 @@ Keybinds:
    G: Toggle grid.
    C: Clear grid.
    F: Toggle info.
-   D: Toggle symetry.
+   B: Toggle symmetry.
    N: Advance one generation.
    Esc: Close window.
    Ctrl+S: Save game to file.

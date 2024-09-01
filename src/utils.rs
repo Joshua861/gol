@@ -1,12 +1,11 @@
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::{fs, io::Read};
 
 #[cfg(not(debug_assertions))]
 use dirs::data_dir;
 use lazy_static::lazy_static;
 use nannou::text::Font;
 
-use crate::Asset;
+use crate::prelude::notify_error;
 
 #[cfg(not(debug_assertions))]
 lazy_static! {
@@ -23,9 +22,9 @@ lazy_static! {
     pub static ref BASE_DIR: String = ".".to_string();
 }
 
-pub fn load_font(name: &str) -> Font {
-    let asset = Asset::get(&format!("fonts/{}.ttf", name)).unwrap().data;
-    Font::from_bytes(asset.into_owned()).unwrap()
+pub fn load_font() -> Font {
+    let asset = include_bytes!("../assets/fonts/jetbrains mono.ttf");
+    Font::from_bytes(asset).unwrap()
 }
 
 #[derive(Clone, Copy)]
@@ -73,4 +72,18 @@ impl From<(usize, usize)> for VecU2 {
             y: tuple.1,
         }
     }
+}
+
+pub fn fmt_num(num: impl Into<usize> + ToString) -> String {
+    num.to_string()
+        .as_bytes()
+        .rchunks(3)
+        .rev()
+        .map(std::str::from_utf8)
+        .collect::<Result<Vec<&str>, _>>()
+        .unwrap_or_else(|e| {
+            notify_error(format!("Failed to format number: {}.", e));
+            "ERROR".split("").collect()
+        })
+        .join(",")
 }

@@ -142,7 +142,14 @@ impl Board {
 
         for x in 0..w {
             for y in 0..h {
-                self.set(x + dx, y + dy, *tiles.get(y, x).unwrap());
+                self.set(
+                    x + dx,
+                    y + dy,
+                    *tiles.get(y, x).unwrap_or_else(|| {
+                        notify_error("Failed to get tile (set area).");
+                        &false
+                    }),
+                );
             }
         }
     }

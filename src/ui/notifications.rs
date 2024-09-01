@@ -78,11 +78,12 @@ pub fn draw_notifications(app: &nannou::App, draw: &nannou::Draw, model: &Model)
             ""
         };
         draw.text(&format!("{}{}", prefix, notification.text))
-            .x(app.window_rect().w() / 2.0)
+            .x(0.)
             .y((-app.window_rect().h() / 2.0) + CONFIG.font_size as f32 * 1.25 * (i + 1) as f32)
-            .w(app.window_rect().w() / 2.0)
+            .w(app.window_rect().w() - 30.)
             .h(CONFIG.font_size as f32)
-            .left_justify()
+            .right_justify()
+            .align_text_bottom()
             .font_size(CONFIG.font_size)
             .font(model.font.clone())
             .color(match notification.kind {
@@ -91,7 +92,7 @@ pub fn draw_notifications(app: &nannou::App, draw: &nannou::Draw, model: &Model)
                 NotificationKind::Default => CONFIG.text_color.to_srgb(),
             });
 
-        notification.timer += 1. / model.fps.avg() as f32;
+        notification.timer += model.delta_time();
 
         if notification.timer >= 10.0 {
             to_remove.push(i);
